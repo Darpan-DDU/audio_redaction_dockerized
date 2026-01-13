@@ -39,15 +39,13 @@ docker compose version
 ## 3. Files You Will Receive
 
 You only need the following files:
-
 ```
 project-root/
 ├── docker-compose.yml
 ├── README.md
-
+```
 No source code is required to run the system.
 
----
 
 ## 4. Pull All Docker Images
 
@@ -135,7 +133,7 @@ Click **Execute** and wait for processing.
 
 ---
 
-you should see output like below
+you should see output that resembles this json 
 
 ```json
 { 
