@@ -1,0 +1,137 @@
+version: "3.9"
+
+services:
+  # =====================================================
+  # Aggregator (Main Orchestrator)
+  # =====================================================
+  aggregator:
+    image: darpanvora/audio-redaction-aggregator:1.0
+    container_name: aggregator
+    ports:
+      - "8000:8000"
+
+    environment:
+      # -----------------
+      # ASR
+      # -----------------
+      ASR_REMOTE_ENDPOINT: http://whisper-medical-asr:9001
+
+      # -----------------
+      # NER service endpoints
+      # -----------------
+      BLAZE_NER_ENDPOINT: http://blaze-ner:9002
+      XLMR_NER_ENDPOINT: http://xlmr-ner:9003
+      GLINER_NER_ENDPOINT: http://gliner-ner:9004
+      OPENMED_NER_ENDPOINT: http://openmed-anatomy:9005
+
+      # -----------------
+      # Mode flags
+      # -----------------
+      NER_MODE: remote
+
+      # =====================================================
+      # 🔒 Blaze Clinical (defaults = config.py)
+      # =====================================================
+      BLAZE_FILTER_LABELS: >
+        ["SIGN_SYMPTOM","MEDICATION","DIAGNOSTIC_PROCEDURE",
+         "LAB_VALUE","HISTORY","FAMILY_HISTORY","AGE","DOSAGE"]
+
+      BLAZE_CONFIDENCE_THRESHOLD: >
+        {"DEFAULT":0.15,"AGE":0.25,"MEDICATION":0.15,
+         "DIAGNOSTIC_PROCEDURE":0.3,"LAB_VALUE":0.5,
+         "BIOLOGICAL_STRUCTURE":0.45,"SIGN_SYMPTOM":0.0,
+         "DOSAGE":0.35,"HISTORY":0.4,"FAMILY_HISTORY":0.3}
+
+      # =====================================================
+      # 🔒 XLM-R
+      # =====================================================
+      XLMR_FILTER_LABELS: >
+        ["person","location","organization","building"]
+
+      XLMR_CONFIDENCE_THRESHOLD: "0.0"
+
+      # =====================================================
+      # 🔒 GLiNER
+      # =====================================================
+      GLINER_FILTER_LABELS: >
+        ["Medication","Medical Equipment","Medical Treatment",
+         "Medical Procedure","Medical Condition","disease"]
+
+      GLINER_CONFIDENCE_THRESHOLD: >
+        {"DEFAULT":0.3,"Medication":0.45,"Medical Equipment":0.45,
+         "Medical Procedure":0.5,"Medical Treatment":0.3,
+         "Medical Condition":0.2,"disease":0.0}
+
+      # =====================================================
+      # 🔒 OpenMed Anatomy
+      # =====================================================
+      OPENMED_FILTER_LABELS: "null"
+      OPENMED_CONFIDENCE_THRESHOLD: "0.70"
+
+      # -----------------
+      # Audio padding
+      # -----------------
+      PADDING_START_MS: "100"
+      PADDING_END_MS: "50"
+
+    volumes:
+      - ./data/vtov_pipe_runs:/app/data/vtov_pipe_runs
+
+    depends_on:
+      - whisper-medical-asr
+      - blaze-ner
+      - xlmr-ner
+      - gliner-ner
+      - openmed-anatomy
+
+    restart: unless-stopped
+
+  # =====================================================
+  # Whisper Medical ASR
+  # =====================================================
+  whisper-medical-asr:
+    image: darpanvora/whisper-medical-asr:1.0
+    container_name: whisper-medical-asr
+    ports:
+      - "9001:9001"
+    restart: unless-stopped
+
+  # =====================================================
+  # Blaze NER
+  # =====================================================
+  blaze-ner:
+    image: darpanvora/blaze-ner:1.0
+    container_name: blaze-ner
+    ports:
+      - "9002:9002"
+    restart: unless-stopped
+
+  # =====================================================
+  # XLM-R NER
+  # =====================================================
+  xlmr-ner:
+    image: darpanvora/xlmr-ner:1.0
+    container_name: xlmr-ner
+    ports:
+      - "9003:9003"
+    restart: unless-stopped
+
+  # =====================================================
+  # GLiNER NER
+  # =====================================================
+  gliner-ner:
+    image: darpanvora/gliner-ner:1.0
+    container_name: gliner-ner
+    ports:
+      - "9004:9004"
+    restart: unless-stopped
+
+  # =====================================================
+  # OpenMed Anatomy NER
+  # =====================================================
+  openmed-anatomy:
+    image: darpanvora/openmed-anatomy-ner:1.0
+    container_name: openmed-anatomy
+    ports:
+      - "9005:9005"
+    restart: unless-stopped
