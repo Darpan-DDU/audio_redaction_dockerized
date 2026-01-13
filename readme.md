@@ -35,7 +35,6 @@ docker --version
 docker compose version
 ```
 
----
 
 ## 3. Files You Will Receive
 
